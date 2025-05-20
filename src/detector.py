@@ -3,11 +3,14 @@ import joblib
 import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from feature_extractor import extract_features
-from notifier import show_notification
+from src.feature_extractor import extract_features
+from src.notifier import show_notification
 
 MODEL_PATH = "model/classifier.pkl"
 WATCH_DIR = "C:/Users/Public"  # Change to directory you want to monitor
+
+# ✅ Load the model once at the top
+model = joblib.load(MODEL_PATH)
 
 class MalwareMonitor(FileSystemEventHandler):
     def __init__(self, model):
@@ -27,11 +30,20 @@ class MalwareMonitor(FileSystemEventHandler):
                 else:
                     print(f"[SAFE] File is clean: {event.src_path}")
 
-def start_monitoring():
-    print("[INFO] Loading model...")
-    model = joblib.load(MODEL_PATH)
+# ✅ Use the global model here
+def scan_file(file_path):
+    print(f"[INFO] Scanning file: {file_path}")
+    features = extract_features(file_path)
+    if not features:
+        return "❌ Failed to extract features"
+    
+    X = [list(features.values())]
+    prediction = model.predict(X)
+    return "🛑 Malware Detected!" if prediction[0] == 1 else "✅ File is Safe"
 
-    print(f"[INFO] Starting folder monitor: {WATCH_DIR}")
+# Folder monitoring for automatic detection
+def start_monitoring():
+    print("[INFO] Starting folder monitor:", WATCH_DIR)
     event_handler = MalwareMonitor(model)
     observer = Observer()
     observer.schedule(event_handler, path=WATCH_DIR, recursive=True)

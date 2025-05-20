@@ -2,7 +2,7 @@ from plyer import notification
 import os
 from PyQt5.QtWidgets import QApplication, QMessageBox
 import sys
-from remover import delete_file
+from src.remover import delete_file
 
 def show_notification(title, message, file_path):
     # System Tray Notification (quick alert)
