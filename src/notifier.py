@@ -1,30 +1,32 @@
 from plyer import notification
 import os
-from PyQt5.QtWidgets import QApplication, QMessageBox
-import sys
 from src.remover import delete_file
 
 def show_notification(title, message, file_path):
-    # System Tray Notification (quick alert)
-    notification.notify(
-        title=title,
-        message=message,
-        timeout=5,
-        app_icon=None  # Optionally set to 'icon.ico'
-    )
+    # ✅ Native System Notification
+    try:
+        notification.notify(
+            title=title,
+            message=message,
+            timeout=10,
+            app_icon=None  # You can use 'assets/icon.ico' here if available
+        )
+        print("[INFO] System notification sent.")
+    except Exception as e:
+        print(f"[ERROR] Notification failed: {e}")
 
-    # GUI Popup with delete option
-    app = QApplication(sys.argv)
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Warning)
-    msg.setWindowTitle("Malware Alert")
-    msg.setText("Malware Detected!")
-    msg.setInformativeText(f"File: {file_path}")
-    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-    msg.button(QMessageBox.Ok).setText("Delete File")
-    msg.button(QMessageBox.Cancel).setText("Ignore")
-
-    result = msg.exec_()
-    if result == QMessageBox.Ok:
-        delete_file(file_path)
-    sys.exit(app.exec_())
+    # ✅ Terminal prompt (use only if running from terminal)
+    print("\n\033[93mMalware Detected!\033[0m")
+    print(f"File: {file_path}")
+    try:
+        # Only prompt if running interactively
+        if os.isatty(0):  # stdin is a terminal
+            user_input = input("Do you want to delete the file? (y/n): ").strip().lower()
+            if user_input == 'y':
+                delete_file(file_path)
+            else:
+                print("File not deleted.")
+        else:
+            print("[INFO] Skipping delete prompt (not in terminal mode).")
+    except Exception as e:
+        print(f"[WARNING] Delete confirmation error: {e}")
